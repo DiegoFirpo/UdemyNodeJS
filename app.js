@@ -2,6 +2,8 @@ const path = require("path");
 const express = require("express");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
+const session = require("express-session");
+const MongoDBStore = require("connect-mongodb-session")(session);
 
 const app = express();
 
@@ -10,23 +12,17 @@ app.set("views", "views");
 
 const adminRoutes = require("./routes/admin");
 const shopRoutes = require("./routes/shop");
+const authRoutes = require("./routes/auth");
 const { get404 } = require("./controllers/error");
 const User = require("./models/user");
 
 app.use(bodyParser.urlencoded());
 app.use(express.static(path.join(__dirname, "public")));
-
-app.use((req, res, next) => {
-  User.findById("6124e92bd574c836541ae448")
-    .then((user) => {
-      req.user = user;
-      next();
-    })
-    .catch((err) => console.log(err));
-});
+app.use(session({ secret: "la irma del CAP", resave: false, saveUninitialized: false }));
 
 app.use("/admin", adminRoutes);
 app.use(shopRoutes);
+app.use(authRoutes);
 app.use(get404);
 
 mongoose
