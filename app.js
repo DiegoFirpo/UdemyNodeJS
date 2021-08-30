@@ -15,7 +15,7 @@ app.set("views", "views");
 const adminRoutes = require("./routes/admin");
 const shopRoutes = require("./routes/shop");
 const authRoutes = require("./routes/auth");
-const { get404 } = require("./controllers/error");
+const { get404, get500 } = require("./controllers/error");
 const User = require("./models/user");
 
 app.use(bodyParser.urlencoded());
@@ -25,17 +25,25 @@ app.use(csrfProtection);
 app.use(flash());
 
 app.use((req, res, next) => {
+  console.log(req.session);
+  
   if (!req.session.user) {
     return next();
   }
 
   User.findById(req.session.user._id)
     .then((user) => {
+      if (!user) {
+        return next();
+      }
+
       req.user = user;
       req.session.isLoggedIn = true;
       next();
     })
-    .catch((err) => console.log(err));
+    .catch((err) => {
+      next(new Error(err));
+    });
 });
 
 app.use((req, res, next) => {
@@ -48,7 +56,12 @@ app.use((req, res, next) => {
 app.use("/admin", adminRoutes);
 app.use(shopRoutes);
 app.use(authRoutes);
+app.get("/500", get500);
 app.use(get404);
+
+app.use((error, req, res, next) => {
+  res.status(500).render("500", { pageTitle: "Error!", path: "/500", isAuthenticated: req.session.isLoggedIn });
+});
 
 mongoose
   .connect("mongodb+srv://root:root@cluster0.tos8c.mongodb.net/shop?retryWrites=true&w=majority")
