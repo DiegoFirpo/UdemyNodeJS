@@ -20,7 +20,7 @@ const User = require("./models/user");
 
 app.use(bodyParser.urlencoded());
 app.use(express.static(path.join(__dirname, "public")));
-app.use(session({ secret: "la irma del CAP", resave: false, saveUninitialized: false }));
+app.use(session({ secret: "la irma del CAP", resave: true, saveUninitialized: true, cookie: { secure: false } }));
 app.use(csrfProtection);
 app.use(flash());
 
@@ -32,6 +32,7 @@ app.use((req, res, next) => {
   User.findById(req.session.user._id)
     .then((user) => {
       req.user = user;
+      req.session.isLoggedIn = true;
       next();
     })
     .catch((err) => console.log(err));
